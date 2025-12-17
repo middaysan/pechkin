@@ -8,10 +8,13 @@ module Pechkin
 
   # Message template to render final message.
   class MessageTemplate
+    attr_reader :raw_template
+
     ERB_INITIALIZE_KEYWORD_ARGUMENTS = ERB.instance_method(:initialize)
                                           .parameters.assoc(:key)
 
     def initialize(erb)
+      @raw_template = erb
       # ERB#initialize has different signature starting from Ruby 2.6.*
       # See link:
       # https://github.com/ruby/ruby/blob/2311087/NEWS#stdlib-updates-outstanding-ones-only

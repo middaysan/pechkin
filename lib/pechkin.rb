@@ -28,6 +28,7 @@ require_relative 'pechkin/app'
 module Pechkin # :nodoc:
   class << self
     def run
+      Dotenv.load
       options = CLI.parse(ARGV)
       cmd = Command::Dispatcher.new(options).dispatch
       cmd.execute
@@ -38,7 +39,3 @@ module Pechkin # :nodoc:
     end
   end
 end
-
-require 'pry';binding.pry
-Dotenv.load
-Pechkin.run

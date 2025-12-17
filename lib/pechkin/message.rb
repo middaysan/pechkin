@@ -18,7 +18,7 @@ module Pechkin
     end
 
     def to_h
-      Marshal.load(Marshal.dump(@message))
+      @message.dup
     end
 
     private

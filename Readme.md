@@ -2,288 +2,192 @@
 
 [![Gem](https://img.shields.io/gem/v/pechkin.svg)](https://rubygems.org/gems/pechkin)
 
-# Who the heck is Pechkin?
+# What is Pechkin?
 
-Pechkin is a postman from soviet animated film series.
+Pechkin is a simple and powerful tool that acts as a bridge between your services and messengers like **Telegram** and **Slack**. It receives data via HTTP webhooks, transforms it using templates, and sends beautiful messages to your work channels.
 
-# What is pechkin (gem) ?
+Think of it as a "Postman" for your automated notifications.
 
-Pechkin is webhook to IM (currently Telegram, Slack) proxy. It allows you to
-transform any request into pretty message in your working channels. Long story
-short:
+### Key Features
+*   **Admin UI**: Manage bots, channels, and templates via a friendly web interface.
+*   **Database Support**: Configurations are stored in a SQLite database by default.
+*   **Hot Reload**: Any changes in the Admin UI are applied immediately without restarting the server.
+*   **Templates**: Use ERB to render JSON data into human-readable messages.
+*   **Flexible Configuration**: Still supports YAML files if you prefer them.
+*   **Metrics**: Built-in Prometheus metrics support.
 
-* You describe set of templates and channel configurations to instruct pechkin
-  how to render received json data into messages and where to send them
-* When pechkin started process any POST request and acts according to your
-  instrcutions
+---
 
 # Table of Contents
-
-- [Configuration basics](#configuration-basics)
-  - [Bots](#bots)
-  - [Channels](#channels)
-  - [Messages](#messages)
-    - [Message values substitution](#message-values-subsitution)
-    - [Allow / Forbid](#allow-forbid)
-    - [Connector specific parameters](#connector-specific-parameters)
+- [Getting Started](#getting-started)
+- [Admin Panel](#admin-panel)
+- [1. How to create a Bot](#1-how-to-create-a-bot)
+- [2. How to create a Template (View)](#2-how-to-create-a-template-view)
+- [3. How to create a Channel and Message](#3-how-to-create-a-channel-and-message)
+- [4. How to call cURL and verify](#4-how-to-call-curl-and-verify)
+- [Migration from Files](#migration-from-files)
+- [Advanced Configuration](#advanced-configuration)
+  - [Environment Variables](#environment-variables)
   - [Authorization](#authorization)
-  - [Wrapping up](#wrapping-up)
-  - [CLI Options](#cli-options)
+  - [Filtering Messages](#filtering-messages)
+  - [Connector Specific Parameters](#connector-specific-parameters)
   - [Metrics](#metrics)
+- [CLI Options](#cli-options)
 
+---
 
-# Configuration basics
+# Getting Started
 
-## Bots
-
-First. You need to create bot to allow pechkin interact with IM APIs. All bots
-stored in `bots/` directory, one `yaml` file per bot.
-
-```
-bots/marvin.yml
-bots/bender.yml
+### Installation
+Install Pechkin as a Ruby gem:
+```bash
+gem install pechkin
 ```
 
-Each `bot/*.yml` is bot description. It has following fields:
-
-* `token` - API token to authorize bot requests. See IM documentation for
-  details.
-* `connector` - connector type. Currenlty: `slack` or `telegram`.
-
-Bot name is taken from `yml` file name. So `bot/bender.yml` is `bender` and
-`bot/marvin.yml` is `marvin`
-
-Next. You need to create `views/` directory and create your first template.
-Template is `*.erb` file. Each template is rendered with ruby internal ERB class
-with `trim_mode: '-'`. Let's create very simple erb template `views/hello.erb`:
-
-```
-Hello, <% name %>!
-```
-
-## Channels
-
-Now we need destination where to send our message. This destinations are grouped
-in `channels` and each `channel` has list of messages it can receive. Channel
-descriptions are stored under `channels/` directory. It has following
-structure:
-
-```
-channels/
-  | - %channel-name%
-       | - _channel.yml
-       | - %message-name%.yml
-```
-
-Common channel setting are stored in `_channel.yml` file. You can configure
-following parameters:
-
-* `chat_ids` - list of chats or channels to send your message to
-* `bot` - name of bot to use for sending messages
-
-## Messages
-
-Then we create `hello.yml` to send hello in channels chats. Messages are
-configured with following parameters:
-
-* `template` - template file path relative to `views/` directory
-(i.e. 'hello.erb')
-* One can also use `{ 'template': '..path..' }` object, to denote that we need
-template expansion for such value. For example:
-```
-template: gitlab-commit.erb
-slack_attachements:
-  - text:
-      template: gitlab-commit-attachment.erb
-```
-* `variables` - is a mapping (key - value) for configurable values in shared
-templates. For example one may want to share `commit.erb` among multiple
-channels but with sligthly different parameters. It may be `repository_base_url`
-wich you want to override for each channel separately. `variables` content will
-be merged with received data. So data can override variable parameters too.
-
-### Message values substitution
-
-As well as you can inject variable parametedatars into template data through
-`variables` field in message configuration you also can substitute some values
-in message config. This is honestly very dirty way to set `slack_attachments`
-(see below) values, without any external scripting.
-
-Any top-level value can be substitued with `${...}` syntax in any field inside
-message description. For example:
-
-```
-slack_attachments:
-  - title: Author
-    value: "${author}"
-```
-
-No value processing is supported.
-
-### Allow / Forbid
-
-Pechkin provides filter mechanism to allow users to select which messages are
-need processing and which are not. This can be expressed in allow / forbid rules
-in message configuration. For example:
-
-```yml
-# { "branch": "master", ... } => process
-# { "branch": "testing", ... } => skip
-allow:
-  - branch: 'master'
-```
-
-will match all requests which data object contains `'master'` on key `branch`.
-
-Same is aplicable to forbid. Following means do not process objects with
-`'testing'` value set to `branch` field.
-
-```yml
-# { "branch": "testing", ... } => skip
-# { "branch": "master", ... } => process
-forbid:
-  - branch: 'testing'
-```
-
-Both `forbid` and `allow` parameters should contain list of rules. When data
-arrives, Pechkin will find first matching rule and will make desicion based on
-whether it 'allow' rule or 'forbid' rule.
-
-### Connector specific parameters
-
-*Telegram*:
-
-* `telegram_parse_mode` - `markdown` or `html` mode for Telegram messages
-
-*Slack*:
-
-* `slack_attachments` - description of attachments to use with Slack message.
-Slack allows to send messages with empty text and only attachments set. Content
-of this field is direct mapping for `attachments` field in Slack API. See
-[documentation](https://api.slack.com/docs/message-attachments) for more
-details.
-
-## Authorization
-
-Pechkin can make simple request authorization. If configuration directory
-contains `pechkin.htpasswd` file or path to `*.htpasswd` file provided via CLI
-options pechkin will use it to check `Authorization` header against it. Pechkin
-checks only `Basic Auth` at the moment.
-
-To create `.htpasswd` file one can use `--add-auth` flag to create or update
-htpasswd file with provided credentials. For example
-
-```
-# Create or update pechkin.htpasswd file in examples/ directory with user
-# root and password root123
-pechkin -c examples --add-user root:root123
-
-# Create or update pechkin-global.htpasswd file at /etc/config
-pechkin --add-user root:root123 --auth-file /etc/config/pechkin-global.htpasswd
-
-# Launch pechkin with explicitly provided htpasswd file
-pechkin -c examples --auth-file /etc/config/pechkin-global.htpasswd
-```
-
-## Wrapping up
-
-Create bot file `bots/marvin.yml`
-
-```
-token: xob-1234567890987654321
-connector: slack
-```
-
-Create view `views/hello.erb`
-
-```
-Hello, <% name %>!
-```
-
-Create channel `channels/my-org-random/_channel.yml`
-
-```
-chat_ids: '#random'
-bot: marvin
-```
-
-Create message `channels/my-org-random/hello.yml`
-
-```
-template: hello.erb
-```
-
-Check configuration
-
-```
-pechkin -c . -k -l
-```
-
-Preview message
-
-```
-pechkin -c -s /my-org-random/hello --data '{"name": "all"}' --preview
-```
-
-
-Try to send message manualy
-
-```
-pechkin -c -s /my-org-random/hello --data '{"name": "all"}'
-```
-
-Start pechkin:
-
-```
+### Running the Server
+Start Pechkin by specifying a configuration directory:
+```bash
 pechkin -c . --port 8080
 ```
+By default, Pechkin will create a `pechkin.sqlite3` file in your current folder to store your settings.
 
-Send message:
+---
 
+# Admin Panel
+
+Once Pechkin is running, you can access the **Admin Panel** at:
+`http://localhost:8080/admin`
+
+From here, you can manage all your settings visually. Any changes you make are applied "on the fly".
+
+---
+
+# 1. How to create a Bot
+
+A Bot is the identity Pechkin uses to talk to Telegram or Slack.
+
+1.  Open the Admin Panel and go to **Bots**.
+2.  Click **Add New Bot**.
+3.  **Name**: Give it a simple name (e.g., `notificator`).
+4.  **Token**: Paste your API token (from @BotFather for Telegram or Slack App settings).
+5.  **Connector**: Choose `telegram` or `slack`.
+6.  Click **Create Bot**.
+
+---
+
+# 2. How to create a Template (View)
+
+Templates define how your messages look. They use the **ERB** (Embedded Ruby) format.
+
+1.  Go to **Views** in the Admin Panel.
+2.  Click **Add New View**.
+3.  **Name**: Give it a name ending in `.erb` (e.g., `alert.erb`).
+4.  **ERB Content**: Write your message. Use `<%= ... %>` to insert data from the incoming JSON.
+    *   Example: `New order from <%= customer_name %> for $<%= amount %>!`
+5.  Click **Create View**.
+
+---
+
+# 3. How to create a Channel and Message
+
+### Step A: Create a Channel
+A **Channel** represents a destination (like a specific group or chat).
+
+1.  Go to **Channels** and click **Add New Channel**.
+2.  **Name**: The ID of your channel (used in the URL, e.g., `sales-team`).
+3.  **Bot**: Select the bot you created in step 1.
+4.  **Chat IDs**: Enter where to send the message (e.g., `#sales` for Slack or a chat ID for Telegram).
+5.  Click **Create Channel**.
+
+### Step B: Add a Message to the Channel
+A **Message** is a specific "endpoint" within your channel.
+
+1.  In the Channels list, find your new channel and click **Add Message**.
+2.  **Message Name (ID)**: Give it an ID (e.g., `new-order`).
+3.  **Template (View)**: Select the template you created in step 2.
+4.  Click **Create Message**.
+
+---
+
+# 4. How to call cURL and verify
+
+Now your webhook is ready! The URL structure is:
+`http://localhost:8080/CHANNEL_ID/MESSAGE_ID`
+
+Example: `http://localhost:8080/sales-team/new-order`
+
+### Test it with cURL:
+Run this command in your terminal:
+```bash
+curl -X POST -H 'Content-Type: application/json' \
+     -d '{"customer_name": "Alice", "amount": 99}' \
+     http://localhost:8080/sales-team/new-order
 ```
-curl -X POST -H 'Content-Type: application/json' --data '{"name": "all"}' \
-     localhost:8080/my-org-random/hello
+Your bot will send the rendered message to the configured destination!
+
+---
+
+# Migration from Files
+
+If you have existing configuration files (in `bots/`, `views/`, and `channels/` folders), you can import them into the database:
+
+1.  Go to the **Migration** tab in the Admin Panel.
+2.  Review the detected files.
+3.  Click **Import Files to Database**.
+
+Settings in the database have priority over files and will be used if names conflict.
+
+---
+
+# Advanced Configuration
+
+### Environment Variables
+*   `PECHKIN_DB_PATH`: Path to the SQLite file (default: `pechkin.sqlite3`).
+*   `DATABASE_URL`: Full connection string for other databases (PostgreSQL, MySQL, etc.).
+*   `PORT`: The port the server listens on (default: 8080).
+
+### Authorization
+Protect your webhooks using Basic Auth with `.htpasswd` files.
+Manage users via the CLI:
+```bash
+pechkin --add-auth user:password
 ```
 
-Check metrics:
-
+### Filtering Messages
+You can skip some requests based on their content using `allow` or `forbid` rules in the **Additional Config** (JSON) field:
+```json
+{
+  "allow": [{"branch": "master"}]
+}
 ```
-curl localhost:8080/metrics
-```
+This will only process requests where the `branch` field in the JSON is `master`.
 
-## CLI options
+### Connector Specific Parameters
 
-```
+**Telegram**:
+* `telegram_parse_mode`: `markdown` or `html` mode for Telegram messages.
+
+**Slack**:
+* `slack_attachments`: Description of attachments to use with Slack messages. See [Slack documentation](https://api.slack.com/docs/message-attachments) for details.
+
+### Metrics
+Pechkin exposes Prometheus metrics at `/metrics`.
+* `pechkin_start_time_seconds`: Startup timestamp.
+* `pechkin_version`: Current version info.
+
+---
+
+# CLI Options
+
+```bash
 Usage: pechkin [options]
-Run options
-    -c, --config-dir FILE            Path to configuration file
-        --port PORT
-        --address ADDRESS            The host address to bind to
-    -p, --pid-file [FILE]            Path to output PID file
-        --log-dir [DIR]              Path to log directory. Output will be writen topechkin.log file. If not specified will write to STDOUT
-        --auth-file FILE             Path to .htpasswd file. By default `pechkin.htpasswd` file will be looked up in configuration directory and if found then authorization will be enabled implicitly. Providing this option enables htpasswd based authorization explicitly. When making requests use Basic auth to authorize.
-
-Utils for configuration maintenance
+    -c, --config-dir FILE            Path to configuration directory
+        --port PORT                  Server port
+        --address ADDRESS            Host address to bind to
     -l, --[no-]list                  List all endpoints
-    -k, --[no-]check                 Load configuration and exit
-    -s, --send ENDPOINT              Send data to specified ENDPOINT and exit. Requires --data to be set.
-        --preview                    Print rendering result to STDOUT and exit. Use with --send
-        --data DATA                  Data to send with --send flag. Json string or @filename.
-
-Auth utils
-        --add-auth USER:PASSWORD     Add auth entry to .htpasswd file. By default pechkin.htpasswd from configuration directory will be used. Use --auth-file to specify other file to update. If file does not exist it will be created.
-
-Debug options
-        --[no-]debug                 Print debug information and stack trace on errors
-
-Common options:
-    -h, --help                       Show this message
-        --version                    Show version
+    -k, --[no-]check                 Check configuration for errors
+    -s, --send ENDPOINT              Send data to specified ENDPOINT and exit.
 ```
 
-## Metrics
-
-Pechkin uses prometheus ruby client to expose basic rack server metrics. And own
-metrics as well:
-
-* `pechkin_start_time_seconds` - startup timestamp
+# License
+MIT

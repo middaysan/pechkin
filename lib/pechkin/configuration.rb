@@ -62,13 +62,17 @@ module Pechkin
   class Configuration
     class << self
       def load_from_directory(working_dir)
+        config = load_only_from_files(working_dir)
+        DBLoader.new.load_configs(config.bots, config.views, config.channels)
+        config
+      end
+
+      def load_only_from_files(working_dir)
         bots = ConfigurationLoaderBots.new.load_from_directory(working_dir)
         views = ConfigurationLoaderViews.new.load_from_directory(working_dir)
 
         channel_loader = ConfigurationLoaderChannels.new(bots, views)
         channels = channel_loader.load_from_directory(working_dir)
-
-        DBLoader.new.load_configs(bots, views, channels)
 
         Configuration.new(working_dir, bots, views, channels)
       end

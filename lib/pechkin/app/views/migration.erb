@@ -1,0 +1,76 @@
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <h2>Data Migration</h2>
+    <form action="/admin/migration/import" method="POST" onsubmit="return confirm('This will import all file configurations into the database. Existing records with same names will be updated. Continue?');">
+        <button type="submit" class="btn btn-warning">Import Files to Database</button>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light"><strong>Bots from Files</strong></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <% @file_config.bots.each do |name, bot| %>
+                        <li class="list-group-item">
+                            <strong><%= name %></strong> <span class="badge bg-secondary"><%= bot.connector %></span>
+                        </li>
+                    <% end %>
+                    <% if @file_config.bots.empty? %>
+                        <li class="list-group-item text-muted">No bots found in files</li>
+                    <% end %>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light"><strong>Views from Files</strong></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <% @file_config.views.each do |name, _| %>
+                        <li class="list-group-item"><%= name %></li>
+                    <% end %>
+                    <% if @file_config.views.empty? %>
+                        <li class="list-group-item text-muted">No views found in files</li>
+                    <% end %>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light"><strong>Channels from Files</strong></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <% @file_config.channels.each do |name, channel| %>
+                        <li class="list-group-item">
+                            <strong><%= name %></strong>
+                            <div class="small text-muted">
+                                Chats: <%= Array(channel.chat_ids).join(', ') %><br>
+                                Messages: <%= channel.messages.keys.join(', ') %>
+                            </div>
+                        </li>
+                    <% end %>
+                    <% if @file_config.channels.empty? %>
+                        <li class="list-group-item text-muted">No channels found in files</li>
+                    <% end %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <h5>How it works:</h5>
+    <ul>
+        <li>Reads configuration files from <code><%= @file_config.working_dir %></code></li>
+        <li>Bots are matched by <strong>name</strong></li>
+        <li>Views are matched by <strong>path/name</strong></li>
+        <li>Channels are matched by <strong>name</strong></li>
+        <li>Messages within channels are matched by <strong>name</strong></li>
+        <li>Importing will not delete existing database records, only add or update them.</li>
+    </ul>
+</div>

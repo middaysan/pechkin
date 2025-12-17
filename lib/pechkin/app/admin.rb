@@ -202,10 +202,72 @@ module Pechkin
 
     post '/messages/:id/delete' do
       msg = DB::Message.find(params[:id])
-      channel_id = msg.channel_id
       msg.destroy
       reload_config
       redirect "/admin/channels"
+    end
+
+    # Migration
+    get '/migration' do
+      @file_config = Configuration.load_only_from_files(configuration.working_dir)
+      erb :migration
+    end
+
+    post '/migration/import' do
+      file_config = Configuration.load_only_from_files(configuration.working_dir)
+
+      DB::Bot.transaction do
+        # 1. Bots
+        file_config.bots.each do |name, bot_data|
+          db_bot = DB::Bot.find_or_initialize_by(name: name)
+          db_bot.update!(token: bot_data.token, connector: bot_data.connector)
+        end
+
+        # 2. Views
+        file_config.views.each do |name, template|
+          db_view = DB::View.find_or_initialize_by(name: name)
+          db_view.update!(content: template.raw_template)
+        end
+
+        # 3. Channels and Messages
+        file_config.channels.each do |channel_name, channel_data|
+          db_bot = DB::Bot.find_by(name: channel_data.connector.name)
+          db_channel = DB::Channel.find_or_initialize_by(name: channel_name)
+          db_channel.update!(
+            bot: db_bot,
+            chat_ids: channel_data.chat_ids.to_json
+          )
+
+          channel_data.messages.each do |msg_name, msg_obj|
+            msg_data = msg_obj.to_h
+            db_view = nil
+            if msg_data['template'].is_a?(MessageTemplate)
+              # We need to find the view name.
+              # In file_config.views we have name -> template mapping.
+              view_name = file_config.views.find do |_, v|
+                v.raw_template == msg_data['template'].raw_template
+              end&.first
+              db_view = DB::View.find_by(name: view_name) if view_name
+            end
+
+            db_msg = DB::Message.find_or_initialize_by(channel: db_channel, name: msg_name)
+
+            variables = msg_data.delete('variables') || {}
+            filters = msg_data.delete('filters') || []
+            msg_data.delete('template') # Already handled
+
+            db_msg.update!(
+              view: db_view,
+              variables: variables.to_json,
+              filters: filters.to_json,
+              config: msg_data.to_json
+            )
+          end
+        end
+      end
+
+      reload_config
+      redirect '/admin/migration'
     end
   end
 end
