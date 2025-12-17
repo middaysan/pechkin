@@ -14,6 +14,10 @@ module Pechkin
       @message_matcher = MessageMatcher.new(@logger)
     end
 
+    def update(channels)
+      @channels = channels
+    end
+
     # Handles message request. Each request has three parameters: channel id,
     # message id, and data object. By channel id we determine where to send
     # data, by message id we determine how to transform this data to real

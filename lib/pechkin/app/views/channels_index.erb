@@ -1,0 +1,70 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Channels</h2>
+    <a href="/admin/channels/new" class="btn btn-primary">Add New Channel</a>
+</div>
+
+<% @channels.each do |channel| %>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+        <div>
+            <h4 class="mb-0 d-inline"><%= channel.name %></h4>
+            <span class="ms-2 badge bg-light text-dark border">Bot: <%= channel.bot.name %></span>
+        </div>
+        <div>
+            <a href="/admin/channels/<%= channel.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit Channel</a>
+            <form action="/admin/channels/<%= channel.id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="mb-2"><strong>Chat IDs:</strong> <code><%= channel.chat_ids %></code></p>
+        
+        <h5 class="mt-4 mb-3 d-flex justify-content-between align-items-center">
+            Messages
+            <a href="/admin/channels/<%= channel.id %>/messages/new" class="btn btn-sm btn-success">+ Add Message</a>
+        </h5>
+        
+        <% if channel.messages.any? %>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>View</th>
+                    <th>Config</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% channel.messages.each do |msg| %>
+                <tr>
+                    <td><code><%= msg.name %></code></td>
+                    <td><%= msg.view ? msg.view.name : '<span class="text-muted">No template</span>' %></td>
+                    <td>
+                        <% if msg.variables.present? %><small class="d-block">Vars: <%= msg.variables %></small><% end %>
+                        <% if msg.filters.present? %><small class="d-block">Filters: <%= msg.filters %></small><% end %>
+                    </td>
+                    <td class="text-end">
+                        <a href="/admin/messages/<%= msg.id %>/edit" class="btn btn-xs btn-link py-0">Edit</a>
+                        <form action="/admin/messages/<%= msg.id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?')">
+                            <button type="submit" class="btn btn-xs btn-link text-danger py-0">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+        <% else %>
+        <div class="alert alert-light border py-2 text-center text-muted">No messages defined for this channel.</div>
+        <% end %>
+    </div>
+</div>
+<% end %>
+
+<% if @channels.empty? %>
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        No channels found. Start by adding a bot, then create a channel.
+    </div>
+</div>
+<% end %>

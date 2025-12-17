@@ -1,0 +1,32 @@
+<div class="mb-4">
+    <a href="/admin/bots" class="text-decoration-none">← Back to Bots</a>
+    <h2 class="mt-2"><%= @bot.new_record? ? 'Add New Bot' : "Edit Bot: #{@bot.name}" %></h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<%= @bot.new_record? ? '/admin/bots' : "/admin/bots/#{@bot.id}" %>" method="POST">
+            <div class="mb-3">
+                <label for="bot_name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="bot_name" name="bot[name]" value="<%= @bot.name %>" required placeholder="e.g. marvin">
+                <div class="form-text">Unique identifier for the bot.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="bot_connector" class="form-label">Connector</label>
+                <select class="form-select" id="bot_connector" name="bot[connector]" required>
+                    <option value="telegram" <%= 'selected' if @bot.connector == 'telegram' %>>Telegram</option>
+                    <option value="slack" <%= 'selected' if @bot.connector == 'slack' %>>Slack</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="bot_token" class="form-label">API Token</label>
+                <input type="text" class="form-control" id="bot_token" name="bot[token]" value="<%= @bot.token %>" required placeholder="API Token from BotFather or Slack">
+            </div>
+
+            <button type="submit" class="btn btn-primary"><%= @bot.new_record? ? 'Create Bot' : 'Update Bot' %></button>
+            <a href="/admin/bots" class="btn btn-link text-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

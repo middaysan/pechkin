@@ -4,6 +4,8 @@ require_relative 'configuration/configuration_loader'
 require_relative 'configuration/configuration_loader_bots'
 require_relative 'configuration/configuration_loader_channels'
 require_relative 'configuration/configuration_loader_views'
+require_relative 'db'
+require_relative 'configuration/db_loader'
 
 module Pechkin
   # Pechkin reads its configuration from provided directory structure. Basic
@@ -66,6 +68,8 @@ module Pechkin
         channel_loader = ConfigurationLoaderChannels.new(bots, views)
         channels = channel_loader.load_from_directory(working_dir)
 
+        DBLoader.new.load_configs(bots, views, channels)
+
         Configuration.new(working_dir, bots, views, channels)
       end
     end
@@ -77,6 +81,14 @@ module Pechkin
       @bots = bots
       @views = views
       @channels = channels
+    end
+
+    def reload
+      new_config = self.class.load_from_directory(@working_dir)
+      @bots = new_config.bots
+      @views = new_config.views
+      @channels = new_config.channels
+      self
     end
   end
 end

@@ -1,0 +1,24 @@
+<div class="mb-4">
+    <a href="/admin/views" class="text-decoration-none">← Back to Views</a>
+    <h2 class="mt-2"><%= @view.new_record? ? 'Add New View' : "Edit View: #{@view.name}" %></h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<%= @view.new_record? ? '/admin/views' : "/admin/views/#{@view.id}" %>" method="POST">
+            <div class="mb-3">
+                <label for="view_name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="view_name" name="view[name]" value="<%= @view.name %>" required placeholder="e.g. hello.erb">
+            </div>
+
+            <div class="mb-3">
+                <label for="view_content" class="form-label">ERB Content</label>
+                <textarea class="form-control" id="view_content" name="view[content]" rows="10" required placeholder="Put erb content here!"><%= @view.content %></textarea>
+                <div class="form-text">Standard ERB template syntax.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><%= @view.new_record? ? 'Create View' : 'Update View' %></button>
+            <a href="/admin/views" class="btn btn-link text-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

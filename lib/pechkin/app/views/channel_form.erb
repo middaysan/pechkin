@@ -1,0 +1,34 @@
+<div class="mb-4">
+    <a href="/admin/channels" class="text-decoration-none">← Back to Channels</a>
+    <h2 class="mt-2"><%= @channel.new_record? ? 'Add New Channel' : "Edit Channel: #{@channel.name}" %></h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<%= @channel.new_record? ? '/admin/channels' : "/admin/channels/#{@channel.id}" %>" method="POST">
+            <div class="mb-3">
+                <label for="channel_name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="channel_name" name="channel[name]" value="<%= @channel.name %>" required placeholder="e.g. my-channel">
+            </div>
+
+            <div class="mb-3">
+                <label for="channel_bot_id" class="form-label">Bot</label>
+                <select class="form-select" id="channel_bot_id" name="channel[bot_id]" required>
+                    <option value="" disabled <%= 'selected' if @channel.bot_id.nil? %>>Select a bot...</option>
+                    <% @bots.each do |bot| %>
+                    <option value="<%= bot.id %>" <%= 'selected' if @channel.bot_id == bot.id %>><%= bot.name %> (<%= bot.connector %>)</option>
+                    <% end %>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="channel_chat_ids" class="form-label">Chat IDs (JSON array or string)</label>
+                <input type="text" class="form-control" id="channel_chat_ids" name="channel[chat_ids]" value="<%= @channel.chat_ids %>" required placeholder='["#general", "@user"]'>
+                <div class="form-text">List of IDs where to send messages. For Telegram use numbers, for Slack use channel names or IDs.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><%= @channel.new_record? ? 'Create Channel' : 'Update Channel' %></button>
+            <a href="/admin/channels" class="btn btn-link text-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

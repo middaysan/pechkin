@@ -9,11 +9,12 @@ module Pechkin
       end
 
       def execute
+        warn 'Starting Pechkin HTTP server...'
         # Configure Puma server instead config.ru
         puma_config = Puma::Configuration.new do |user_config|
           user_config.bind "tcp://#{options.bind_address}:#{options.port}"
           user_config.threads options.min_threads, options.max_threads # Set max and min threads
-          user_config.app AppBuilder.new.build(handler, options)
+          user_config.app AppBuilder.new.build(handler, configuration, options)
         end
 
         # Run Puma server with configuration

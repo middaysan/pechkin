@@ -1,0 +1,41 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Bots</h2>
+    <a href="/admin/bots/new" class="btn btn-primary">Add New Bot</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Connector</th>
+                    <th>Token</th>
+                    <th>Channels</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @bots.each do |bot| %>
+                <tr>
+                    <td><strong><%= bot.name %></strong></td>
+                    <td><span class="badge bg-info text-dark"><%= bot.connector %></span></td>
+                    <td><code><%= bot.token[0..10] %>...</code></td>
+                    <td><%= bot.channels.count %></td>
+                    <td class="text-end">
+                        <a href="/admin/bots/<%= bot.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form action="/admin/bots/<%= bot.id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <% end %>
+                <% if @bots.empty? %>
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No bots found. Create your first bot!</td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>

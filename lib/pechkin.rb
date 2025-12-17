@@ -7,6 +7,7 @@ require 'prometheus/middleware/exporter'
 require 'powerpack/string'
 require 'htauth'
 require 'base64'
+require 'dotenv'
 
 require_relative 'pechkin/cli'
 require_relative 'pechkin/bot'
@@ -37,3 +38,7 @@ module Pechkin # :nodoc:
     end
   end
 end
+
+require 'pry';binding.pry
+Dotenv.load
+Pechkin.run

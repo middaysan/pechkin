@@ -1,12 +1,19 @@
+require_relative 'admin'
+
 module Pechkin
   # Application configurator and builder. This creates all needed middleware
   # and stuff
   class AppBuilder
-    def build(handler, options)
+    def build(handler, configuration, options)
       logger = create_logger(options.log_dir)
       handler.logger = logger
       app = App.new(logger)
       app.handler = handler
+
+      AdminApp.set :handler, handler
+      AdminApp.set :configuration, configuration
+      AdminApp.set :logger, logger
+
       prometheus = Pechkin::PrometheusUtils.registry
 
       Rack::Builder.app do
@@ -17,6 +24,10 @@ module Pechkin
         # See CLI class for configuration details
         use Pechkin::Auth::Middleware, auth_file: options.htpasswd if options.htpasswd
         use Prometheus::Middleware::Exporter, registry: prometheus
+
+        map '/admin' do
+          run AdminApp
+        end
 
         run app
       end

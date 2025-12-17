@@ -1,0 +1,45 @@
+<div class="mb-4">
+    <a href="/admin/channels" class="text-decoration-none">← Back to Channels</a>
+    <h2 class="mt-2"><%= @message.new_record? ? "Add Message to #{@channel.name}" : "Edit Message: #{@message.name}" %></h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<%= @message.new_record? ? "/admin/channels/#{@channel.id}/messages" : "/admin/messages/#{@message.id}" %>" method="POST">
+            <div class="mb-3">
+                <label for="message_name" class="form-label">Message Name (ID)</label>
+                <input type="text" class="form-control" id="message_name" name="message[name]" value="<%= @message.name %>" required placeholder="e.g. hello-world">
+            </div>
+
+            <div class="mb-3">
+                <label for="message_view_id" class="form-label">Template (View)</label>
+                <select class="form-select" id="message_view_id" name="message[view_id]">
+                    <option value="" <%= 'selected' if @message.view_id.nil? %>>None (No-op template)</option>
+                    <% @views.each do |view| %>
+                    <option value="<%= view.id %>" <%= 'selected' if @message.view_id == view.id %>><%= view.name %></option>
+                    <% end %>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="message_variables" class="form-label">Variables (JSON)</label>
+                <textarea class="form-control" id="message_variables" name="message[variables]" rows="3" placeholder='{"var1": "value1"}'><%= @message.variables %></textarea>
+                <div class="form-text">Predefined variables for this message.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="message_filters" class="form-label">Filters (JSON Array)</label>
+                <textarea class="form-control" id="message_filters" name="message[filters]" rows="3" placeholder='["data.field == 1"]'><%= @message.filters %></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="message_config" class="form-label">Additional Config (JSON)</label>
+                <textarea class="form-control" id="message_config" name="message[config]" rows="3" placeholder='{"slack_attachments": []}'><%= @message.config %></textarea>
+                <div class="form-text">Connector-specific configuration.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><%= @message.new_record? ? 'Create Message' : 'Update Message' %></button>
+            <a href="/admin/channels" class="btn btn-link text-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
