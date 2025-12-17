@@ -23,6 +23,7 @@ require_relative 'pechkin/configuration'
 require_relative 'pechkin/substitute'
 require_relative 'pechkin/prometheus_utils'
 require_relative 'pechkin/auth'
+require_relative 'pechkin/backup'
 require_relative 'pechkin/app'
 
 module Pechkin # :nodoc:
@@ -39,3 +40,5 @@ module Pechkin # :nodoc:
     end
   end
 end
+
+Pechkin.run if $PROGRAM_NAME == __FILE__

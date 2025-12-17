@@ -23,14 +23,13 @@ module Pechkin
     end
 
     def create_connector(bot)
-      case bot.connector
-      when 'tg', 'telegram'
-        Connector::Telegram.new(bot.token, bot.name)
-      when 'slack'
-        Connector::Slack.new(bot.token, bot.name)
-      else
-        raise "Unknown connector #{bot.connector} for #{bot.name}"
-      end
+      connector_klass = Connector.list[bot.connector]
+      # Also check for aliases if any (e.g. 'tg' for 'telegram')
+      connector_klass ||= Connector.list['telegram'] if bot.connector == 'tg'
+
+      raise "Unknown connector #{bot.connector} for #{bot.name}" unless connector_klass
+
+      connector_klass.new(bot.token, bot.name)
     end
 
     def yaml_load(file)

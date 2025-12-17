@@ -1,0 +1,25 @@
+<div class="mb-4">
+    <a href="/admin/connectors" class="text-decoration-none">← Back to Connectors</a>
+    <h2 class="mt-2"><%= @connector.new_record? ? 'Add New Connector' : "Edit Connector: #{@connector.name}" %></h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<%= @connector.new_record? ? '/admin/connectors' : "/admin/connectors/#{@connector.id}" %>" method="POST">
+            <div class="mb-3">
+                <label for="connector_name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="connector_name" name="connector[name]" value="<%= @connector.name %>" required placeholder="e.g. discord">
+                <div class="form-text">Internal identifier (as used in bot configuration).</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="connector_class" class="form-label">Class Name</label>
+                <input type="text" class="form-control" id="connector_class" name="connector[connector_class]" value="<%= @connector.connector_class %>" required placeholder="e.g. Pechkin::Connector::Discord">
+                <div class="form-text">Full Ruby class name of the connector implementation.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><%= @connector.new_record? ? 'Create Connector' : 'Update Connector' %></button>
+            <a href="/admin/connectors" class="btn btn-link text-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

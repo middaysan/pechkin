@@ -15,9 +15,11 @@
             <div class="mb-3">
                 <label for="bot_connector" class="form-label">Connector</label>
                 <select class="form-select" id="bot_connector" name="bot[connector]" required>
-                    <option value="telegram" <%= 'selected' if @bot.connector == 'telegram' %>>Telegram</option>
-                    <option value="slack" <%= 'selected' if @bot.connector == 'slack' %>>Slack</option>
+                    <% @connectors.each do |connector| %>
+                    <option value="<%= connector.name %>" <%= 'selected' if @bot.connector == connector.name %>><%= connector.name.capitalize %></option>
+                    <% end %>
                 </select>
+                <div class="form-text">Choose the messenger protocol.</div>
             </div>
 
             <div class="mb-3">

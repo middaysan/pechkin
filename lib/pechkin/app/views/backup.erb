@@ -1,0 +1,44 @@
+<div class="mb-4">
+    <h2>Database Backup</h2>
+    <p class="text-muted">Manage your database backups here. Currently, you can download the SQLite database file directly.</p>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Download Backup</h5>
+    </div>
+    <div class="card-body">
+        <p>Download the current state of your database as a <code>.sqlite3</code> file.</p>
+        <a href="/admin/backup/download" class="btn btn-primary">
+            Download Database File
+        </a>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Run All Backups</h5>
+    </div>
+    <div class="card-body">
+        <p>This will trigger a backup to all configured destinations (e.g., Minio, Email, etc.).</p>
+        <form action="/admin/backup/run" method="POST">
+            <button type="submit" class="btn btn-outline-primary">Run All Backups</button>
+        </form>
+    </div>
+</div>
+
+<% if @backup_results && !@backup_results.empty? %>
+<div class="mt-4">
+    <h5>Other Backup Destinations</h5>
+    <div class="list-group">
+        <% @backup_results.each do |name, result| %>
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <%= name %>
+            <span class="badge <%= result ? 'bg-success' : 'bg-danger' %> rounded-pill">
+                <%= result ? 'Success' : 'Failed' %>
+            </span>
+        </div>
+        <% end %>
+    </div>
+</div>
+<% end %>

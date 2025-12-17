@@ -58,5 +58,7 @@ module Pechkin
         { channel: channel, code: response.code.to_i, response: response.body }
       end
     end
+
+    Connector.register('slack', Slack)
   end
 end

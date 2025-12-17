@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Connectors</h2>
+    <a href="/admin/connectors/new" class="btn btn-primary">Add New Connector</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Class</th>
+                    <th>Loaded?</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @connectors.each do |connector| %>
+                <% is_loaded = Pechkin::Connector.list.key?(connector.name) %>
+                <tr>
+                    <td>
+                        <strong><%= connector.name %></strong>
+                    </td>
+                    <td><code><%= connector.connector_class %></code></td>
+                    <td>
+                        <% if is_loaded %>
+                            <span class="badge bg-success">Loaded</span>
+                        <% else %>
+                            <span class="badge bg-danger">Not Loaded</span>
+                        <% end %>
+                    </td>
+                    <td class="text-end">
+                        <a href="/admin/connectors/<%= connector.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form action="/admin/connectors/<%= connector.id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <% end %>
+                <% if @connectors.empty? %>
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">No connectors found.</td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-4">
+    <h4>About Connectors</h4>
+    <p class="text-muted">
+        Connectors are the implementations of messenger protocols. Standard connectors (Telegram, Slack) are loaded automatically.
+        To add a new connector, you need to provide its Ruby class name and ensure the file is present in <code>lib/pechkin/connector/</code>.
+    </p>
+</div>

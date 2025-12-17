@@ -14,6 +14,16 @@ module Pechkin
       ActiveRecord::Base.establish_connection(db_config)
 
       create_schema
+      sync_connectors
+    end
+
+    def self.sync_connectors
+      # Synchronize connectors from Pechkin::Connector.list to DB
+      Pechkin::Connector.list.each do |name, klass|
+        connector = Connector.find_or_initialize_by(name: name)
+        connector.connector_class = klass.name
+        connector.save!
+      end
     end
 
     def self.create_schema
@@ -22,6 +32,7 @@ module Pechkin
         Pechkin::DB.create_views_table(self)
         Pechkin::DB.create_channels_table(self)
         Pechkin::DB.create_messages_table(self)
+        Pechkin::DB.create_connectors_table(self)
       end
     end
 
@@ -76,6 +87,18 @@ module Pechkin
         t.timestamps
 
         t.index %i[channel_id name], unique: true
+      end
+    end
+
+    def self.create_connectors_table(schema)
+      return if schema.table_exists?(:connectors)
+
+      schema.create_table :connectors do |t|
+        t.string :name, null: false
+        t.string :connector_class, null: false
+        t.timestamps
+
+        t.index :name, unique: true
       end
     end
 
@@ -136,6 +159,13 @@ module Pechkin
         JSON.parse(config || '{}')
       rescue StandardError
         {}
+      end
+    end
+
+    # Connector model for Pechkin DB
+    class Connector < ActiveRecord::Base
+      def self.find_by_name(name)
+        where(arel_table[:name].eq(name)).first
       end
     end
   end

@@ -24,5 +24,7 @@ module Pechkin
         "https://api.telegram.org/bot#{@bot_token}/#{method}"
       end
     end
+
+    Connector.register('telegram', Telegram)
   end
 end

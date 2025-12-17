@@ -65,4 +65,18 @@ describe Pechkin::AdminApp do
     expect(last_response.status).to eq(302)
     expect(Pechkin::DB::View.find_by_name('test.erb')).not_to be_nil
   end
+
+  it 'renders the connectors page and displays default ones' do
+    get '/admin/connectors'
+    expect(last_response).to be_ok
+    expect(last_response.body).to include('Connectors')
+    expect(last_response.body).to include('telegram')
+    expect(last_response.body).to include('slack')
+  end
+
+  it 'allows adding a new connector via UI' do
+    post '/admin/connectors', connector: { name: 'discord', connector_class: 'Pechkin::Connector::Discord' }
+    expect(last_response.status).to eq(302)
+    expect(Pechkin::DB::Connector.find_by_name('discord')).not_to be_nil
+  end
 end

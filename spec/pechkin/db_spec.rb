@@ -6,6 +6,7 @@ describe Pechkin::DB do
     before do
       allow(ActiveRecord::Schema).to receive(:define)
       allow(ActiveRecord::Base).to receive(:establish_connection)
+      allow(Pechkin::DB).to receive(:sync_connectors)
     end
 
     after do

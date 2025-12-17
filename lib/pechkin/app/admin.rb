@@ -6,6 +6,7 @@ module Pechkin
   class AdminApp < Sinatra::Base
     set :views, File.join(File.dirname(__FILE__), 'views')
     set :public_folder, File.join(File.dirname(__FILE__), 'public')
+    enable :sessions
 
     configure :test do
       disable :host_authorization
@@ -38,6 +39,7 @@ module Pechkin
 
     get '/bots/new' do
       @bot = DB::Bot.new
+      @connectors = DB::Connector.all
       erb :bot_form
     end
 
@@ -47,12 +49,14 @@ module Pechkin
         reload_config
         redirect '/admin/bots'
       else
+        @connectors = DB::Connector.all
         erb :bot_form
       end
     end
 
     get '/bots/:id/edit' do
       @bot = DB::Bot.find(params[:id])
+      @connectors = DB::Connector.all
       erb :bot_form
     end
 
@@ -62,6 +66,7 @@ module Pechkin
         reload_config
         redirect '/admin/bots'
       else
+        @connectors = DB::Connector.all
         erb :bot_form
       end
     end
@@ -70,6 +75,45 @@ module Pechkin
       DB::Bot.find(params[:id]).destroy
       reload_config
       redirect '/admin/bots'
+    end
+
+    # Connectors
+    get '/connectors' do
+      @connectors = DB::Connector.all
+      erb :connectors_index
+    end
+
+    get '/connectors/new' do
+      @connector = DB::Connector.new
+      erb :connector_form
+    end
+
+    post '/connectors' do
+      @connector = DB::Connector.new(params[:connector])
+      if @connector.save
+        redirect '/admin/connectors'
+      else
+        erb :connector_form
+      end
+    end
+
+    get '/connectors/:id/edit' do
+      @connector = DB::Connector.find(params[:id])
+      erb :connector_form
+    end
+
+    post '/connectors/:id' do
+      @connector = DB::Connector.find(params[:id])
+      if @connector.update(params[:connector])
+        redirect '/admin/connectors'
+      else
+        erb :connector_form
+      end
+    end
+
+    post '/connectors/:id/delete' do
+      DB::Connector.find(params[:id]).destroy
+      redirect '/admin/connectors'
     end
 
     # Views
@@ -268,6 +312,28 @@ module Pechkin
 
       reload_config
       redirect '/admin/migration'
+    end
+
+    # Backup
+    get '/backup' do
+      @backup_results = session.delete(:backup_results)
+      erb :backup
+    end
+
+    post '/backup/run' do
+      session[:backup_results] = Backup.perform_backup
+      redirect '/admin/backup'
+    end
+
+    get '/backup/download' do
+      db_path = Backup.manager.database_path
+
+      if db_path && File.exist?(db_path)
+        send_file db_path, filename: File.basename(db_path), type: 'application/x-sqlite3'
+      else
+        status 404
+        'Database file not found or not using SQLite.'
+      end
     end
   end
 end
