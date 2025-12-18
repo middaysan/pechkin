@@ -1,0 +1,54 @@
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <h2>Recent Request Logs</h2>
+    <a href="/admin/logs" class="btn btn-outline-primary btn-sm">Refresh</a>
+</div>
+
+<% if @logs.empty? %>
+    <div class="alert alert-info">
+        No logs found. Make sure you have specified a log directory using <code>--log-dir</code> flag.
+    </div>
+<% else %>
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Time</th>
+                            <th>IP</th>
+                            <th>Method</th>
+                            <th>Path</th>
+                            <th>Status</th>
+                            <th>Body Size</th>
+                            <th>Params</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @logs.each do |log| %>
+                            <tr>
+                                <td class="text-nowrap"><small><%= Time.parse(log['timestamp']).strftime('%Y-%m-%d %H:%M:%S') %></small></td>
+                                <td><code><%= log['ip'] %></code></td>
+                                <td><span class="badge <%= log['method'] == 'POST' ? 'bg-success' : 'bg-secondary' %>"><%= log['method'] %></span></td>
+                                <td><code><%= log['path'] %></code></td>
+                                <td>
+                                    <span class="badge <%= log['status'].to_i < 400 ? 'bg-info' : 'bg-danger' %>">
+                                        <%= log['status'] %>
+                                    </span>
+                                </td>
+                                <td><%= log['body_size'] %> B</td>
+                                <td>
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#log-<%= log['timestamp'].gsub(/[:.]/, '-') %>">
+                                        View Data
+                                    </button>
+                                    <div class="collapse mt-2" id="log-<%= log['timestamp'].gsub(/[:.]/, '-') %>">
+                                        <pre class="bg-light p-2 rounded" style="font-size: 0.75rem; max-width: 400px; overflow-x: auto;"><%= JSON.pretty_generate(log['params']) %></pre>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<% end %>

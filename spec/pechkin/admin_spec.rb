@@ -79,4 +79,10 @@ describe Pechkin::AdminApp do
     expect(last_response.status).to eq(302)
     expect(Pechkin::DB::Connector.find_by_name('discord')).not_to be_nil
   end
+
+  it 'renders the logs page' do
+    get '/admin/logs'
+    expect(last_response).to be_ok
+    expect(last_response.body).to include('Recent Request Logs')
+  end
 end

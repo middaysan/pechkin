@@ -4,10 +4,11 @@ module Pechkin
     DEFAULT_CONTENT_TYPE = { 'Content-Type' => 'application/json' }.freeze
     DEFAULT_HEADERS = {}.merge(DEFAULT_CONTENT_TYPE)
 
-    attr_accessor :handler, :logger
+    attr_accessor :handler, :logger, :request_logger
 
-    def initialize(logger)
+    def initialize(logger, request_logger = nil)
       @logger = logger
+      @request_logger = request_logger
     end
 
     def call(env)
@@ -19,11 +20,17 @@ module Pechkin
       end
 
       result = RequestHandler.new(handler, req, logger).handle
-      response(200, result)
+      res = response(200, result)
+      request_logger&.log(req, 200, result.to_json.size)
+      res
     rescue AppError => e
-      process_app_error(req, e)
+      res = process_app_error(req, e)
+      request_logger&.log(req, e.code, res[2].first.size)
+      res
     rescue StandardError => e
-      process_unhandled_error(req, e)
+      res = process_unhandled_error(req, e)
+      request_logger&.log(req, 503, res[2].first.size)
+      res
     end
 
     private

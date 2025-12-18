@@ -1,4 +1,5 @@
 require_relative 'admin'
+require_relative '../request_logger'
 
 module Pechkin
   # Application configurator and builder. This creates all needed middleware
@@ -6,13 +7,17 @@ module Pechkin
   class AppBuilder
     def build(handler, configuration, options)
       logger = create_logger(options.log_dir)
+      request_logger = RequestLogger.new
+      
       handler.logger = logger
-      app = App.new(logger)
+      app = App.new(logger, request_logger)
       app.handler = handler
 
       AdminApp.set :handler, handler
       AdminApp.set :configuration, configuration
       AdminApp.set :logger, logger
+      AdminApp.set :request_logger, request_logger
+      AdminApp.set :log_dir, options.log_dir
 
       prometheus = Pechkin::PrometheusUtils.registry
 

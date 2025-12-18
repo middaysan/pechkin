@@ -21,6 +21,14 @@ module Pechkin
         settings.configuration
       end
 
+      def request_logger
+        settings.request_logger
+      end
+
+      def log_dir
+        settings.log_dir
+      end
+
       def reload_config
         configuration.reload
         handler.update(configuration.channels)
@@ -29,6 +37,12 @@ module Pechkin
 
     get '/' do
       redirect '/admin/bots'
+    end
+
+    # Logs
+    get '/logs' do
+      @logs = RequestLogger.recent_logs
+      erb :logs_index
     end
 
     # Bots

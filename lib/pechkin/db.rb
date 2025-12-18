@@ -33,6 +33,21 @@ module Pechkin
         Pechkin::DB.create_channels_table(self)
         Pechkin::DB.create_messages_table(self)
         Pechkin::DB.create_connectors_table(self)
+        Pechkin::DB.create_request_logs_table(self)
+      end
+    end
+
+    def self.create_request_logs_table(schema)
+      return if schema.table_exists?(:request_logs)
+
+      schema.create_table :request_logs do |t|
+        t.string :ip
+        t.string :method
+        t.string :path
+        t.integer :status
+        t.integer :body_size
+        t.text :params
+        t.timestamps
       end
     end
 
@@ -166,6 +181,15 @@ module Pechkin
     class Connector < ActiveRecord::Base
       def self.find_by_name(name)
         where(arel_table[:name].eq(name)).first
+      end
+    end
+
+    # RequestLog model for Pechkin DB
+    class RequestLog < ActiveRecord::Base
+      def params_hash
+        JSON.parse(params || '{}')
+      rescue StandardError
+        {}
       end
     end
   end

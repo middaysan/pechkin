@@ -25,6 +25,7 @@ Think of it as a "Postman" for your automated notifications.
 - [2. How to create a Template (View)](#2-how-to-create-a-template-view)
 - [3. How to create a Channel and Message](#3-how-to-create-a-channel-and-message)
 - [4. How to call cURL and verify](#4-how-to-call-curl-and-verify)
+- [Logs and Monitoring](#logs-and-monitoring)
 - [Migration from Files](#migration-from-files)
 - [Advanced Configuration](#advanced-configuration)
   - [Environment Variables](#environment-variables)
@@ -124,6 +125,23 @@ curl -X POST -H 'Content-Type: application/json' \
      http://localhost:8080/sales-team/new-order
 ```
 Your bot will send the rendered message to the configured destination!
+
+---
+
+# Logs and Monitoring
+
+Pechkin provides detailed logging for all incoming requests.
+
+1.  **Admin UI Logs**: Go to the **Logs** tab in the Admin Panel to see the most recent history of requests.
+    *   Logs are stored in the database (last 1000 entries).
+    *   View client IP addresses.
+    *   Inspect request status and response size.
+    *   Expand the **View Data** section to see the exact JSON payload received.
+
+The `--log-dir` option is still used for application logs (`pechkin.log`), but request logs are now handled by the database.
+```bash
+pechkin -c . --log-dir ./logs
+```
 
 ---
 
