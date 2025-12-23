@@ -1,0 +1,47 @@
+# Pechkin settings file
+
+# Admin credentials for /admin panel.
+# These credentials are used ONLY for accessing the Admin UI.
+admin_user: admin
+admin_password: pass123
+
+# Path to configuration directory. Default: current directory
+# config_dir: .
+
+# Port to listen on. Default: 9292
+# port: 9292
+
+# Host address to bind to. Default: 127.0.0.1
+# address: 127.0.0.1
+
+# Minimum number of threads for Puma server. Default: 5
+# min_threads: 5
+
+# Maximum number of threads for Puma server. Default: 20
+# max_threads: 20
+
+# Path to htpasswd file. If not specified pechkin.htpasswd will be looked up
+# in configuration directory.
+# htpasswd: pechkin.htpasswd
+
+# Path to log directory. If not specified will write to STDOUT.
+# log_dir: logs
+
+# Database configuration
+database:
+  # Database adapter to use: sqlite3 or postgresql
+  adapter: sqlite3
+  
+  # SQLite3 configuration
+  sqlite3:
+    adapter: sqlite3
+    database: pechkin.sqlite3
+    
+  # PostgreSQL configuration
+  postgresql:
+    adapter: postgresql
+    database: pechkin
+    username: user
+    password: password
+    host: localhost
+    port: 5432

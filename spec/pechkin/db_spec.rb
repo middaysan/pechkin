@@ -37,5 +37,27 @@ describe Pechkin::DB do
         database: expected_path
       )
     end
+
+    it 'skips create_schema if PECHKIN_SKIP_AUTO_MIGRATION is set' do
+      ENV['PECHKIN_SKIP_AUTO_MIGRATION'] = 'true'
+      expect(Pechkin::DB).not_to receive(:create_schema)
+      Pechkin::DB.setup
+      ENV.delete('PECHKIN_SKIP_AUTO_MIGRATION')
+    end
+
+    it 'uses database settings from options' do
+      options = OpenStruct.new(
+        database: {
+          adapter: 'postgresql',
+          postgresql: { host: 'localhost', database: 'pechkin' }
+        }
+      )
+      Pechkin::DB.setup(options)
+      expect(ActiveRecord::Base).to have_received(:establish_connection).with(
+        adapter: 'postgresql',
+        host: 'localhost',
+        database: 'pechkin'
+      )
+    end
   end
 end

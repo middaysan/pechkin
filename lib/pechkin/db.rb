@@ -5,16 +5,32 @@ require 'json'
 module Pechkin
   # Database module for Pechkin
   module DB
-    def self.setup
-      db_config = ENV['DATABASE_URL'] || {
-        adapter: 'sqlite3',
-        database: ENV['PECHKIN_DB_PATH'] || File.join(Dir.pwd, 'pechkin.sqlite3')
-      }
+    def self.setup(options = nil)
+      db_config = find_db_config(options)
 
       ActiveRecord::Base.establish_connection(db_config)
 
-      create_schema
+      create_schema unless ENV['PECHKIN_SKIP_AUTO_MIGRATION']
       sync_connectors
+    end
+
+    def self.find_db_config(options)
+      # 1. From options (file settings)
+      if options && options.database && options.database[:adapter]
+        adapter_name = options.database[:adapter]
+        config = options.database[adapter_name.to_sym] || {}
+        config[:adapter] ||= adapter_name
+        return config
+      end
+
+      # 2. From ENV
+      return ENV['DATABASE_URL'] if ENV['DATABASE_URL']
+
+      # 3. Default SQLite
+      {
+        adapter: 'sqlite3',
+        database: ENV['PECHKIN_DB_PATH'] || File.join(Dir.pwd, 'pechkin.sqlite3')
+      }
     end
 
     def self.sync_connectors
@@ -26,6 +42,26 @@ module Pechkin
       end
     end
 
+    def self.update_config_timestamp
+      info = SystemInfo.first_or_initialize
+      info.last_config_update_at = Time.now
+      info.save!
+    end
+
+    def self.last_config_update_at
+      SystemInfo.first&.last_config_update_at || Time.at(0)
+    end
+
+    def self.update_users_timestamp
+      info = SystemInfo.first_or_initialize
+      info.last_users_update_at = Time.now
+      info.save!
+    end
+
+    def self.last_users_update_at
+      SystemInfo.first&.last_users_update_at || Time.at(0)
+    end
+
     def self.create_schema
       ActiveRecord::Schema.define do
         Pechkin::DB.create_bots_table(self)
@@ -34,6 +70,35 @@ module Pechkin
         Pechkin::DB.create_messages_table(self)
         Pechkin::DB.create_connectors_table(self)
         Pechkin::DB.create_request_logs_table(self)
+        Pechkin::DB.create_system_info_table(self)
+        Pechkin::DB.create_users_table(self)
+      end
+    end
+
+    def self.create_users_table(schema)
+      return if schema.table_exists?(:users)
+
+      schema.create_table :users do |t|
+        t.string :username, null: false
+        t.string :password, null: false
+        t.timestamps
+
+        t.index :username, unique: true
+      end
+    end
+
+    def self.create_system_info_table(schema)
+      if schema.table_exists?(:system_info)
+        unless schema.column_exists?(:system_info, :last_users_update_at)
+          schema.add_column :system_info, :last_users_update_at, :datetime
+        end
+        return
+      end
+
+      schema.create_table :system_info do |t|
+        t.datetime :last_config_update_at
+        t.datetime :last_users_update_at
+        t.timestamps
       end
     end
 
@@ -190,6 +255,21 @@ module Pechkin
         JSON.parse(params || '{}')
       rescue StandardError
         {}
+      end
+    end
+
+    # SystemInfo model for Pechkin DB
+    class SystemInfo < ActiveRecord::Base
+      self.table_name = 'system_info'
+    end
+
+    # User model for Pechkin DB
+    class User < ActiveRecord::Base
+      validates :username, presence: true, uniqueness: true
+      validates :password, presence: true
+
+      def self.find_by_username(username)
+        where(arel_table[:username].eq(username)).first
       end
     end
   end

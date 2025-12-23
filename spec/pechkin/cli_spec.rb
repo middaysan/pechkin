@@ -44,5 +44,17 @@ module Pechkin
           .to eq('app.pid')
       end
     end
+
+    context 'when init settings is provided' do
+      it 'sets init_settings to true' do
+        expect(CLI.parse(%w[init settings]).init_settings).to be(true)
+      end
+    end
+
+    context 'when --init-settings flag is provided' do
+      it 'sets init_settings to true' do
+        expect(CLI.parse(%w[--init-settings]).init_settings).to be(true)
+      end
+    end
   end
 end

@@ -61,9 +61,9 @@ module Pechkin
   #   'views' folder contains erb templates to render when data arives.
   class Configuration
     class << self
-      def load_from_directory(working_dir)
+      def load_from_directory(working_dir, options = nil)
         config = load_only_from_files(working_dir)
-        DBLoader.new.load_configs(config.bots, config.views, config.channels)
+        DBLoader.new.load_configs(config.bots, config.views, config.channels, options)
         config
       end
 

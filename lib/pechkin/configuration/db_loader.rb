@@ -3,8 +3,8 @@ module Pechkin
   class DBLoader
     include ConfigurationLoader
 
-    def load_configs(bots, views, channels)
-      DB.setup
+    def load_configs(bots, views, channels, options = nil)
+      DB.setup(options)
       load_bots(bots)
       load_views(views)
       load_channels(channels, bots, views)

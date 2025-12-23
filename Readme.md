@@ -29,6 +29,7 @@ Think of it as a "Postman" for your automated notifications.
 - [Migration from Files](#migration-from-files)
 - [Advanced Configuration](#advanced-configuration)
   - [Environment Variables](#environment-variables)
+  - [Kubernetes Deployment](#kubernetes-deployment)
   - [Authorization](#authorization)
   - [Filtering Messages](#filtering-messages)
   - [Connector Specific Parameters](#connector-specific-parameters)
@@ -159,17 +160,82 @@ Settings in the database have priority over files and will be used if names conf
 
 # Advanced Configuration
 
+### Centralized Configuration (pechkin.settings.yml)
+You can centralize all Pechkin settings in a `pechkin.settings.yml` file located in your working directory. This file can include any CLI options and database configurations. CLI arguments take priority over settings in this file.
+
+To create a default configuration file with comments:
+```bash
+pechkin init settings
+```
+
+Example `pechkin.settings.yml`:
+```yaml
+admin_user: admin
+admin_password: pass123
+
+port: 9292
+address: 0.0.0.0
+min_threads: 5
+max_threads: 20
+
+database:
+  adapter: postgresql # switch between 'sqlite3' and 'postgresql'
+  sqlite3:
+    adapter: sqlite3
+    database: pechkin.sqlite3
+  postgresql:
+    adapter: postgresql
+    database: pechkin
+    username: user
+    password: password
+    host: localhost
+```
+
 ### Environment Variables
 *   `PECHKIN_DB_PATH`: Path to the SQLite file (default: `pechkin.sqlite3`).
 *   `DATABASE_URL`: Full connection string for other databases (PostgreSQL, MySQL, etc.).
+*   `PECHKIN_SKIP_AUTO_MIGRATION`: Set to `true` to disable automatic database schema creation on startup (recommended for production).
+*   `PECHKIN_SESSION_SECRET`: Secret key for session encryption in Admin UI. If not set, a random one is generated on each start, which means you will have to log in again after server restart.
 *   `PORT`: The port the server listens on (default: 8080).
 
+### Kubernetes Deployment
+When deploying to Kubernetes with multiple replicas, follow these recommendations:
+1.  **Shared Database**: Use an external PostgreSQL or MySQL database via `DATABASE_URL`.
+2.  **Shared Sessions**: Set `PECHKIN_SESSION_SECRET` to a persistent random string to allow users to stay logged in across different pods.
+3.  **Migrations**: Use an InitContainer or a Job to run database migrations before the main application starts:
+    ```bash
+    pechkin --migrate
+    ```
+4.  **Logging**: Do not use `--log-dir`. Logs will go to `STDOUT`, which is the standard way to handle logs in Kubernetes.
+5.  **Synchronization**: Pechkin automatically synchronizes configuration changes across multiple instances using a timestamp in the database.
+
 ### Authorization
-Protect your webhooks using Basic Auth with `.htpasswd` files.
-Manage users via the CLI:
-```bash
-pechkin --add-auth user:password
-```
+Protect your webhooks and Admin Panel using Basic Auth. Pechkin has a two-tier authorization system:
+
+#### 1. Admin Panel Authorization
+Access to the `/admin` panel is restricted by a single admin user. The credentials for this user are defined in `pechkin.settings.yml` (or via CLI).
+*   **Default credentials**: `admin` / `pass123`.
+*   **Note**: Admin users only have access to the Admin Panel and cannot be used to authorize webhook requests.
+
+#### 2. Webhook Authorization
+Webhook endpoints are protected using regular users. You can manage these users in two ways:
+
+1.  **Admin UI (Recommended)**:
+    *   Go to the **Users** tab in the Admin Panel.
+    *   Click **Add New User** and enter a username.
+    *   Pechkin will automatically generate a secure 12-character password.
+    *   You can edit the password of existing users from the Users list.
+    *   Users are stored in the database and cached in memory for high performance.
+    *   In a multi-instance setup (e.g., Kubernetes), changes are automatically synchronized across all pods.
+
+2.  **htpasswd files**:
+    *   Manage users via the CLI: `pechkin --add-auth user:password`.
+    *   Specify the file via `--auth-file FILE` (default is `pechkin.htpasswd`).
+    *   This method is kept for backward compatibility and as a fallback.
+
+**Important**: Regular users only have access to webhook endpoints and cannot access the Admin Panel.
+
+When making requests to webhooks, use **Basic Auth** with the credentials you created. If both regular user methods are used, Pechkin will first try to find the user in the database and then fallback to the `.htpasswd` file.
 
 ### Filtering Messages
 You can skip some requests based on their content using `allow` or `forbid` rules in the **Additional Config** (JSON) field:
@@ -204,6 +270,9 @@ Usage: pechkin [options]
         --address ADDRESS            Host address to bind to
     -l, --[no-]list                  List all endpoints
     -k, --[no-]check                 Check configuration for errors
+        --migrate                    Run database migrations and exit
+        --init-settings              Initialize pechkin.settings.yml
+        --session-secret SECRET      Secret key for session encryption
     -s, --send ENDPOINT              Send data to specified ENDPOINT and exit.
 ```
 

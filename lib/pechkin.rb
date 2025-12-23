@@ -10,6 +10,7 @@ require 'base64'
 require 'dotenv'
 
 require_relative 'pechkin/cli'
+require_relative 'pechkin/app_settings'
 require_relative 'pechkin/bot'
 require_relative 'pechkin/channel'
 require_relative 'pechkin/message'
@@ -19,6 +20,7 @@ require_relative 'pechkin/handler'
 require_relative 'pechkin/message_matcher'
 require_relative 'pechkin/message_template'
 require_relative 'pechkin/connector'
+require_relative 'pechkin/user_manager'
 require_relative 'pechkin/configuration'
 require_relative 'pechkin/substitute'
 require_relative 'pechkin/prometheus_utils'
@@ -41,4 +43,4 @@ module Pechkin # :nodoc:
   end
 end
 
-Pechkin.run if $PROGRAM_NAME == __FILE__
+Pechkin.run if $PROGRAM_NAME == __FILE__ # To run as a script

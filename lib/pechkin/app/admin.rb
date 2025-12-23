@@ -1,12 +1,12 @@
 require 'sinatra/base'
 require 'json'
+require 'securerandom'
 require_relative '../db'
 
 module Pechkin
   class AdminApp < Sinatra::Base
     set :views, File.join(File.dirname(__FILE__), 'views')
     set :public_folder, File.join(File.dirname(__FILE__), 'public')
-    enable :sessions
 
     configure :test do
       disable :host_authorization
@@ -29,10 +29,47 @@ module Pechkin
         settings.log_dir
       end
 
+      def user_manager
+        settings.user_manager
+      end
+
       def reload_config
         configuration.reload
         handler.update(configuration.channels)
+        DB.update_config_timestamp
       end
+
+      def sync_users
+        DB.update_users_timestamp
+        user_manager.sync
+      end
+
+      def admin_user
+        settings.admin_user
+      end
+
+      def admin_password
+        settings.admin_password
+      end
+    end
+
+    get '/login' do
+      erb :login, layout: :layout
+    end
+
+    post '/login' do
+      if params[:username] == admin_user && params[:password] == admin_password
+        session[:admin_auth] = true
+        redirect '/admin'
+      else
+        @error = 'Invalid username or password'
+        erb :login, layout: :layout
+      end
+    end
+
+    get '/logout' do
+      session.delete(:admin_auth)
+      redirect '/admin/login'
     end
 
     get '/' do
@@ -43,6 +80,50 @@ module Pechkin
     get '/logs' do
       @logs = RequestLogger.recent_logs
       erb :logs_index
+    end
+
+    # Users
+    get '/users' do
+      @users = DB::User.all
+      erb :users_index
+    end
+
+    get '/users/new' do
+      @user = DB::User.new
+      erb :user_form
+    end
+
+    get '/users/:id/edit' do
+      @user = DB::User.find(params[:id])
+      erb :user_form
+    end
+
+    post '/users' do
+      @user = DB::User.new(params[:user])
+      @user.password = UserManager.generate_password if @user.username && !@user.username.empty?
+
+      if @user.save
+        sync_users
+        redirect '/admin/users'
+      else
+        erb :user_form
+      end
+    end
+
+    post '/users/:id' do
+      @user = DB::User.find(params[:id])
+      if @user.update(params[:user])
+        sync_users
+        redirect '/admin/users'
+      else
+        erb :user_form
+      end
+    end
+
+    post '/users/:id/delete' do
+      DB::User.find(params[:id]).destroy
+      sync_users
+      redirect '/admin/users'
     end
 
     # Bots
@@ -232,7 +313,7 @@ module Pechkin
       @message = DB::Message.new(params[:message].merge(channel: @channel))
       if @message.save
         reload_config
-        redirect "/admin/channels"
+        redirect '/admin/channels'
       else
         @views = DB::View.all
         erb :message_form
@@ -250,7 +331,7 @@ module Pechkin
       @message = DB::Message.find(params[:id])
       if @message.update(params[:message])
         reload_config
-        redirect "/admin/channels"
+        redirect '/admin/channels'
       else
         @channel = @message.channel
         @views = DB::View.all
@@ -262,7 +343,7 @@ module Pechkin
       msg = DB::Message.find(params[:id])
       msg.destroy
       reload_config
-      redirect "/admin/channels"
+      redirect '/admin/channels'
     end
 
     # Migration

@@ -35,7 +35,15 @@ module Pechkin
     end
 
     def parse(args)
-      values = OpenStruct.new
+      file_settings = AppSettings.load_from_disk
+      values = OpenStruct.new(file_settings)
+
+      # Handle 'init settings' subcommand
+      if args[0] == 'init' && args[1] == 'settings'
+        values[:init_settings] = true
+        args.shift(2)
+      end
+
       parser = parser_create(values)
 
       parser.parse(args)
@@ -50,7 +58,8 @@ module Pechkin
         if o.is_a?(String)
           parser.separator o
         else
-          values[o[:name]] = o[:default] if o[:default]
+          # Set default value only if not already set from file settings
+          values[o[:name]] = o[:default] if values[o[:name]].nil? && o[:default]
 
           args = []
           args += o[:names]
@@ -89,6 +98,14 @@ module Pechkin
 
     extend CLIHelper
 
+    separator 'Auth options'
+    opt :admin_user, names: ['--admin-user USER'], default: 'admin',
+                     desc: 'Admin username for /admin panel'
+    opt :admin_password, names: ['--admin-password PASSWORD'], default: 'pass123',
+                         desc: 'Admin password for /admin panel'
+    opt :session_secret, names: ['--session-secret SECRET'],
+                         desc: 'Secret key for session encryption'
+
     separator 'Run options'
 
     opt :config_dir, default: Dir.pwd,
@@ -122,11 +139,15 @@ module Pechkin
                          'Basic auth to authorize.'
 
     separator 'Utils for configuration maintenance'
+    opt :init_settings, names: ['--init-settings'],
+                        desc: 'Initialize pechkin.settings.yml with default values'
     opt :list?, names: ['-l', '--[no-]list'],
                 desc: 'List all endpoints'
 
     opt :check?, names: ['-k', '--[no-]check'],
                  desc: 'Load configuration and exit'
+    opt :migrate?, names: ['--migrate'],
+                   desc: 'Run database migrations and exit'
     opt :send_data, names: ['-s', '--send ENDPOINT'],
                     desc: 'Send data to specified ENDPOINT and exit. ' \
                           'Requires --data to be set.'

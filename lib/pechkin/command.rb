@@ -5,6 +5,8 @@ require_relative 'command/list'
 require_relative 'command/check'
 require_relative 'command/run_server'
 require_relative 'command/send_data'
+require_relative 'command/migrate'
+require_relative 'command/init_settings'
 
 module Pechkin
   # Contains general command processing.
@@ -19,6 +21,8 @@ module Pechkin
         Check,
         List,
         SendData,
+        Migrate,
+        InitSettings,
         RunServer
       ].freeze
 

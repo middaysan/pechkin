@@ -1,0 +1,43 @@
+<div class="mb-4">
+    <a href="/admin/users" class="btn btn-outline-secondary">&larr; Back to Users</a>
+</div>
+
+<% if @user.persisted? %>
+    <h2>Edit User: <%= @user.username %></h2>
+<% else %>
+    <h2>Add New User</h2>
+<% end %>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<%= @user.persisted? ? "/admin/users/#{@user.id}" : "/admin/users" %>" method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="user[username]" value="<%= @user.username %>" required>
+            </div>
+
+            <% if @user.persisted? %>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="text" class="form-control" id="password" name="user[password]" value="<%= @user.password %>" required>
+                </div>
+            <% else %>
+                <div class="form-text mb-3">Password will be generated automatically after creation.</div>
+            <% end %>
+
+            <% if @user.errors.any? %>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        <% @user.errors.full_messages.each do |msg| %>
+                            <li><%= msg %></li>
+                        <% end %>
+                    </ul>
+                </div>
+            <% end %>
+
+            <button type="submit" class="btn btn-primary">
+                <%= @user.persisted? ? "Save Changes" : "Create User and Generate Password" %>
+            </button>
+        </form>
+    </div>
+</div>
